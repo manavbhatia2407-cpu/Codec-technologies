@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dynamic SGPA & CGPA Calculator</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --card-hover: #273549;
+      --border: #334155;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --primary: #38bdf8;
+      --primary-hover: #0ea5e9;
+      --success: #22c55e;
+      --danger: #ef4444;
+      --danger-hover: #dc2626;
+      --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text-main);
+      font-family: var(--font);
+      padding: 1.5rem 1rem;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 2rem;
+      max-width: 650px;
+    }
+
+    header h1 {
+      font-size: 1.85rem;
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: 0.35rem;
+    }
+
+    header p {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 900px;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    /* Cards */
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.25rem;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+    }
+
+    .card-title {
+      font-size: 1.2rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 0.6rem;
+    }
+
+    /* Buttons */
+    button {
+      background: var(--primary);
+      color: #0f172a;
+      border: none;
+      border-radius: 6px;
+      padding: 0.5rem 0.9rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.3rem;
+      transition: background 0.2s, transform 0.1s;
+    }
+
+    button:hover { background: var(--primary-hover); }
+    button:active { transform: scale(0.98); }
+
+    button.btn-outline {
+      background: transparent;
+      color: var(--primary);
+      border: 1px solid var(--primary);
+    }
+    button.btn-outline:hover { background: rgba(56, 189, 248, 0.1); }
+
+    button.btn-danger {
+      background: transparent;
+      color: var(--danger);
+      border: 1px solid var(--danger);
+      padding: 0.35rem 0.6rem;
+      font-size: 0.8rem;
+    }
+    button.btn-danger:hover {
+      background: var(--danger);
+      color: #ffffff;
+    }
+
+    /* Table Styles */
+    .table-wrapper {
+      width: 100%;
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.9rem;
+    }
+
+    th {
+      color: var(--text-muted);
+      font-weight: 600;
+      padding: 0.6rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    td {
+      padding: 0.6rem;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+
+    input, select {
+      background: #0f172a;
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 0.45rem 0.6rem;
+      border-radius: 6px;
+      font-size: 0.88rem;
+      width: 100%;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    input:focus, select:focus {
+      border-color: var(--primary);
+    }
+
+    /* Summary Bar */
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 1rem;
+      margin-top: 1.25rem;
+    }
+
+    .summary-box {
+      background: #0f172a;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.85rem;
+      text-align: center;
+    }
+
+    .summary-box .label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 0.25rem;
+    }
+
+    .summary-box .value {
+      font-size: 1.45rem;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    .summary-box .value.highlight {
+      color: var(--success);
+    }
+
+    /* CGPA Form */
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .field-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .field-group label {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+    }
+
+    /* Responsive adjustment */
+    @media (max-width: 600px) {
+      th, td { padding: 0.45rem 0.35rem; }
+      .hide-mobile { display: none; }
+      header h1 { font-size: 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Dynamic SGPA &amp; CGPA Calculator</h1>
+    <p>Calculate your semester grade points, overall cumulative GPA, and approximate percentage.</p>
+  </header>
+
+  <div class="container">
+    <!-- Semester SGPA Section -->
+    <section class="card">
+      <div class="card-title">
+        <span>Semester Coursework (SGPA)</span>
+        <button type="button" onclick="addSubjectRow()">+ Add Subject</button>
+      </div>
+
+      <div class="table-wrapper">
+        <table id="subjects-table">
+          <thead>
+            <tr>
+              <th style="width: 40%;">Subject / Course</th>
+              <th style="width: 22%;">Credits</th>
+              <th style="width: 25%;">Grade</th>
+              <th class="hide-mobile" style="width: 13%;">Pts</th>
+              <th style="width: 40px; text-align: center;"></th>
+            </tr>
+          </thead>
+          <tbody id="subjects-body">
+            <!-- Dynamic subject rows inserted here -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- SGPA Results -->
+      <div class="summary-grid">
+        <div class="summary-box">
+          <div class="label">Total Credits</div>
+          <div class="value" id="total-credits">0</div>
+        </div>
+        <div class="summary-box">
+          <div class="label">Grade Points</div>
+          <div class="value" id="total-points">0</div>
+        </div>
+        <div class="summary-box">
+          <div class="label">SGPA</div>
+          <div class="value highlight" id="sgpa-val">0.00</div>
+        </div>
+        <div class="summary-box">
+          <div class="label">Approx % (×9.5)</div>
+          <div class="value" id="sgpa-percent">0.0%</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Cumulative CGPA Section -->
+    <section class="card">
+      <div class="card-title">
+        <span>Overall CGPA Combiner</span>
+      </div>
+
+      <div class="form-grid">
+        <div class="field-group">
+          <label for="prev-cgpa">Previous Cumulative CGPA</label>
+          <input type="number" id="prev-cgpa" placeholder="e.g. 8.4" step="0.01" min="0" max="10" oninput="calculateCGPA()">
+        </div>
+        <div class="field-group">
+          <label for="prev-credits">Total Credits Completed Prior</label>
+          <input type="number" id="prev-credits" placeholder="e.g. 40" step="0.5" min="0" oninput="calculateCGPA()">
+        </div>
+      </div>
+
+      <!-- CGPA Results -->
+      <div class="summary-grid">
+        <div class="summary-box">
+          <div class="label">All Total Credits</div>
+          <div class="value" id="cumulative-credits">0</div>
+        </div>
+        <div class="summary-box">
+          <div class="label">Final CGPA</div>
+          <div class="value highlight" id="cgpa-val">0.00</div>
+        </div>
+        <div class="summary-box">
+          <div class="label">Equivalent %</div>
+          <div class="value" id="cgpa-percent">0.0%</div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    // Standard 10-Point Scale Mapping
+    const GRADE_MAP = {
+      '10': { label: 'O / A+ (10)', points: 10 },
+      '9':  { label: 'A (9)', points: 9 },
+      '8':  { label: 'B+ (8)', points: 8 },
+      '7':  { label: 'B (7)', points: 7 },
+      '6':  { label: 'C (6)', points: 6 },
+      '5':  { label: 'P / D (5)', points: 5 },
+      '0':  { label: 'F (0)', points: 0 }
+    };
+
+    // Initial starter subjects
+    const defaultSubjects = [
+      { name: 'Core Course 1', credits: 4, grade: '10' },
+      { name: 'Core Course 2', credits: 4, grade: '9' },
+      { name: 'Elective 1', credits: 3, grade: '8' },
+      { name: 'Lab / Practical', credits: 1.5, grade: '10' }
+    ];
+
+    const tableBody = document.getElementById('subjects-body');
+
+    // Create a new subject row
+    function createRow(subject = { name: '', credits: 3, grade: '9' }) {
+      const tr = document.createElement('tr');
+
+      const gradeOptions = Object.keys(GRADE_MAP).map(key => {
+        const selected = key === String(subject.grade) ? 'selected' : '';
+        return `<option value="${key}" ${selected}>${GRADE_MAP[key].label}</option>`;
+      }).join('');
+
+      tr.innerHTML = `
+        <td>
+          <input type="text" class="sub-name" placeholder="Subject Name" value="${subject.name}">
+        </td>
+        <td>
+          <input type="number" class="sub-credits" min="0" max="20" step="0.5" value="${subject.credits}" oninput="calculateSGPA()">
+        </td>
+        <td>
+          <select class="sub-grade" onchange="calculateSGPA()">
+            ${gradeOptions}
+          </select>
+        </td>
+        <td class="hide-mobile sub-points-display" style="color: var(--text-muted); font-weight:500;">
+          0
+        </td>
+        <td style="text-align: center;">
+          <button type="button" class="btn-danger" title="Remove" onclick="removeRow(this)">✕</button>
+        </td>
+      `;
+
+      return tr;
+    }
+
+    function addSubjectRow(data) {
+      tableBody.appendChild(createRow(data));
+      calculateSGPA();
+    }
+
+    function removeRow(btn) {
+      const rows = tableBody.querySelectorAll('tr');
+      if (rows.length <= 1) {
+        // Keep at least one row, just reset fields
+        const tr = rows[0];
+        tr.querySelector('.sub-name').value = '';
+        tr.querySelector('.sub-credits').value = '3';
+        tr.querySelector('.sub-grade').value = '9';
+      } else {
+        btn.closest('tr').remove();
+      }
+      calculateSGPA();
+    }
+
+    // Main SGPA Calculation
+    let currentSemesterCredits = 0;
+    let currentSemesterPoints = 0;
+    let currentSGPA = 0;
+
+    function calculateSGPA() {
+      let totalCredits = 0;
+      let totalEarnedPoints = 0;
+
+      const rows = tableBody.querySelectorAll('tr');
+      rows.forEach(row => {
+        const creditVal = parseFloat(row.querySelector('.sub-credits').value) || 0;
+        const gradePoint = parseFloat(row.querySelector('.sub-grade').value) || 0;
+        const earned = creditVal * gradePoint;
+
+        const ptsCol = row.querySelector('.sub-points-display');
+        if (ptsCol) ptsCol.textContent = earned.toFixed(1);
+
+        totalCredits += creditVal;
+        totalEarnedPoints += earned;
+      });
+
+      currentSemesterCredits = totalCredits;
+      currentSemesterPoints = totalEarnedPoints;
+      currentSGPA = totalCredits > 0 ? (totalEarnedPoints / totalCredits) : 0;
+
+      // Update SGPA Display
+      document.getElementById('total-credits').textContent = totalCredits.toFixed(1);
+      document.getElementById('total-points').textContent = totalEarnedPoints.toFixed(1);
+      document.getElementById('sgpa-val').textContent = currentSGPA.toFixed(2);
+
+      // Percentage formula: SGPA * 9.5 (AICTE standard)
+      const pct = (currentSGPA * 9.5).toFixed(1);
+      document.getElementById('sgpa-percent').textContent = currentSGPA > 0 ? `${pct}%` : '0.0%';
+
+      // Update CGPA downstream
+      calculateCGPA();
+    }
+
+    // Cumulative CGPA Calculation
+    function calculateCGPA() {
+      const prevCgpa = parseFloat(document.getElementById('prev-cgpa').value) || 0;
+      const prevCredits = parseFloat(document.getElementById('prev-credits').value) || 0;
+
+      const prevPoints = prevCgpa * prevCredits;
+      const combinedCredits = prevCredits + currentSemesterCredits;
+      const combinedPoints = prevPoints + currentSemesterPoints;
+
+      let finalCgpa = 0;
+      if (combinedCredits > 0) {
+        finalCgpa = combinedPoints / combinedCredits;
+      } else if (currentSGPA > 0) {
+        finalCgpa = currentSGPA;
+      }
+
+      document.getElementById('cumulative-credits').textContent = combinedCredits.toFixed(1);
+      document.getElementById('cgpa-val').textContent = finalCgpa.toFixed(2);
+
+      const cgpaPct = (finalCgpa * 9.5).toFixed(1);
+      document.getElementById('cgpa-percent').textContent = finalCgpa > 0 ? `${cgpaPct}%` : '0.0%';
+    }
+
+    // Initialize with starter rows on load
+    defaultSubjects.forEach(sub => addSubjectRow(sub));
+  </script>
+</body>
+</html>
